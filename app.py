@@ -1463,8 +1463,6 @@ def create_message_chart(df):
     )
     
     return fig
-
-# ------------------ MAIN APPLICATION ------------------ #
 def main():
     # Check authentication
     if not st.session_state.authenticated:
