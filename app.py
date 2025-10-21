@@ -1,3 +1,4 @@
+'''
 import streamlit as st
 import pandas as pd
 import gspread
@@ -53,7 +54,7 @@ st.markdown("""
     }
     
     .sub-title {
-        text-align: center; font-size: 1.2rem; color: #1a1a1a;
+        text-align: center; font-size: 1.2rem; color: #000000;
         margin-bottom: 2rem; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
     
@@ -77,7 +78,7 @@ st.markdown("""
     }
     
     .lead-card *, .email-card *, .crm-card *, .message-card-all * {
-        color: #1a1a1a !important; text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        color: #000000 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     
     .lead-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.8rem; }
@@ -106,7 +107,7 @@ st.markdown("""
     .status-error { background: #ef4444; color: white !important; }
     
     .section-header {
-        font-size: 1.8rem; font-weight: 700; color: #1a1a1a; margin: 2.5rem 0 1.5rem 0;
+        font-size: 1.8rem; font-weight: 700; color: #000000; margin: 2.5rem 0 1.5rem 0;
         padding-bottom: 0.8rem; border-bottom: 3px solid #667eea; text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
@@ -123,7 +124,7 @@ st.markdown("""
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     
-    .stat-label { color: #1a1a1a; font-size: 1em; margin-top: 8px; font-weight: 500; }
+    .stat-label { color: #000000; font-size: 1em; margin-top: 8px; font-weight: 500; }
     .crm-field { margin-bottom: 1rem; padding: 0.8rem; background: #f8f9fa; border-radius: 10px; }
     .crm-field strong { color: #667eea; margin-right: 0.5rem; }
     
@@ -142,7 +143,7 @@ st.markdown("""
     }
     
     .timestamp {
-        font-size: 0.9rem; color: #1a1a1a; text-align: right; font-weight: 500;
+        font-size: 0.9rem; color: #000000; text-align: right; font-weight: 500;
         background: rgba(0,0,0,0.05); padding: 0.3rem 0.8rem; border-radius: 15px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -183,6 +184,9 @@ def parse_timestamp(timestamp_str):
             return None
 
 def is_message_sent(row):
+    # If it's an email, always consider it unsent as per requirement
+    if row.get("email_subject") or row.get("email_message"):
+        return False
     success = str(row.get('success', '')).lower()
     return success == 'true' or success == 'yes' or success == '1'
 
@@ -273,33 +277,38 @@ def show_crm_dashboard():
     # Display CRM cards with ALL 25 columns
     for idx, (i, row) in enumerate(filtered_df.iterrows()):
         with st.container():
-            st.markdown(f"""
+            st.markdown(f'''
             <div class="crm-card">
                 <h3 style="margin-bottom: 1rem; color: #667eea;">👤 {row.get('profile_name', row.get('name', 'Unknown'))}</h3>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
             
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown(f"""
+                st.markdown(f'''
                 <div class="crm-field"><strong>📍 Location:</strong> {row.get('profile_location', row.get('location', 'N/A'))}</div>
+                <div class="crm-field"><strong>🏢 Company:</strong> {row.get('company_name', 'N/A')}</div>
+                <div class="crm-field"><strong>🔗 Profile URL:</strong> <a href="{row.get('linkedin_url', '#')}" target="_blank">{row.get('linkedin_url', 'N/A').split('/in/')[-1].replace('/', '') if row.get('linkedin_url') else 'N/A'}</a></div>
                 <div class="crm-field"><strong>💼 Tagline:</strong> {row.get('profile_tagline', row.get('tagline', 'N/A'))}</div>
                 <div class="crm-field"><strong>🔍 Search Term:</strong> {row.get('search_term', 'N/A')}</div>
                 <div class="crm-field"><strong>🌆 Search City:</strong> {row.get('search_city', 'N/A')}</div>
                 <div class="crm-field"><strong>🌍 Search Country:</strong> {row.get('search_country', 'N/A')}</div>
-                <div class="crm-field"><strong>🔗 LinkedIn:</strong> <a href="{row.get('linkedin_url', '#')}" target="_blank">{row.get('linkedin_url', 'N/A')[:50]}</a></div>
-                <div class="crm-field"><strong>🖼️ Image:</strong> {row.get('image_url', 'N/A')[:50] if row.get('image_url') else 'N/A'}</div>
-                """, unsafe_allow_html=True)
+                <div class="crm-field"><strong>🖼️ Image URL:</strong> {row.get('image_url', 'N/A')[:50] if row.get('image_url') else 'N/A'}</div>
+                <div class="crm-field"><strong>📧 Email:</strong> {row.get('email', 'N/A')}</div>
+                <div class="crm-field"><strong>📞 Phone:</strong> {row.get('phone_number', 'N/A')}</div>
+                ''', unsafe_allow_html=True)
             
             with col2:
                 success_badge = "status-success" if is_message_sent(row) else "status-error"
-                st.markdown(f"""
+                st.markdown(f'''
                 <div class="crm-field"><strong>🕐 Timestamp:</strong> {row.get('timestamp', 'N/A')}</div>
                 <div class="crm-field"><strong>✅ Success:</strong> <span class="status-badge {success_badge}">{row.get('success', 'N/A')}</span></div>
                 <div class="crm-field"><strong>📊 Status:</strong> {row.get('status', 'N/A')}</div>
                 <div class="crm-field"><strong>🔗 Connection:</strong> {row.get('connection_status', 'N/A')}</div>
                 <div class="crm-field"><strong>🌐 Session:</strong> {row.get('browserflow_session', 'N/A')[:30]}</div>
+                <div class="crm-field"><strong>📅 Last Activity:</strong> {row.get('last_activity', 'N/A')}</div>
+                <div class="crm-field"><strong>📝 Notes:</strong> {row.get('notes', 'N/A')[:100]}{'...' if len(str(row.get('notes', ''))) > 100 else ''}</div>
                 <div class="crm-field"><strong>💳 Credits Used:</strong> {row.get('credits_used', 'N/A')}</div>
-                """, unsafe_allow_html=True)
+                ''', unsafe_allow_html=True)
             
             with st.expander("💬 View All Messages & Complete Details"):
                 st.markdown("**📧 LinkedIn Outreach:**")
@@ -347,36 +356,36 @@ def show_email_outreach():
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""
+        st.markdown(f'''
         <div class="stat-box">
             <div class="stat-number">{len(email_df)}</div>
             <div class="stat-label">Total Emails</div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
     with col2:
         ready = len(email_df[email_df['status'] == 'ready_to_send']) if 'status' in email_df.columns else 0
-        st.markdown(f"""
+        st.markdown(f'''
         <div class="stat-box">
             <div class="stat-number">{ready}</div>
             <div class="stat-label">Ready</div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
     with col3:
         sent = len(email_df[email_df['success'].astype(str).str.lower() == 'true']) if 'success' in email_df.columns else 0
-        st.markdown(f"""
+        st.markdown(f'''
         <div class="stat-box">
             <div class="stat-number">{sent}</div>
             <div class="stat-label">Sent</div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
     with col4:
         pending = len(email_df) - sent
-        st.markdown(f"""
+        st.markdown(f'''
         <div class="stat-box">
             <div class="stat-number">{pending}</div>
             <div class="stat-label">Pending</div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -426,7 +435,7 @@ def show_email_outreach():
         
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.markdown(f"""
+            st.markdown(f'''
             <div class="email-card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                     <h3 style="margin: 0;">📧 {name}</h3>
@@ -439,7 +448,7 @@ def show_email_outreach():
                     {email_message[:200]}{'...' if len(str(email_message)) > 200 else ''}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
         
         with col2:
             st.markdown("**Actions**")
@@ -464,23 +473,35 @@ def show_lead_outreach():
     
     if 'timestamp' in outreach_df.columns:
         outreach_df['parsed_time'] = outreach_df['timestamp'].apply(parse_timestamp)
-        outreach_df['date'] = outreach_df['parsed_time'].dt.date
-    
+
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{len(outreach_df)}</div><div class="stat-label">Total Leads</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{len(outreach_df)}</div><div class="stat-label">Total Leads</div></div>''', unsafe_allow_html=True)
     with col2:
         sent = len(outreach_df[outreach_df['success'].astype(str).str.lower() == 'true']) if 'success' in outreach_df.columns else 0
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{sent}</div><div class="stat-label">Sent</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{sent}</div><div class="stat-label">Sent</div></div>''', unsafe_allow_html=True)
     with col3:
         pending = len(outreach_df[outreach_df['status'] == 'pending']) if 'status' in outreach_df.columns else 0
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{pending}</div><div class="stat-label">Pending</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{pending}</div><div class="stat-label">Pending</div></div>''', unsafe_allow_html=True)
     with col4:
         ready = len(outreach_df[outreach_df['status'] == 'ready_to_send']) if 'status' in outreach_df.columns else 0
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{ready}</div><div class="stat-label">Ready</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{ready}</div><div class="stat-label">Ready</div></div>''', unsafe_allow_html=True)
     
     st.markdown("---")
-    st.dataframe(outreach_df, use_container_width=True, height=600)
+
+    for idx, (i, row) in enumerate(outreach_df.iterrows()):
+        with st.container():
+            st.markdown(f'''
+            <div class="lead-card">
+                <h3 class="lead-title">{row.get('profile_name', 'Unknown')}</h3>
+                <p class="lead-sub">{row.get('profile_tagline', 'N/A')}</p>
+                <div class="lead-msg">{row.get('linkedin_message', 'N/A')}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <a href="{row.get('linkedin_url', '#')}" target="_blank">View Profile</a>
+                    <span class="timestamp">{row.get('timestamp', 'N/A')}</span>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
 
 def show_search_interface(webhook_url):
     st.markdown("<div class='section-header'>🔍 Search & Send New Leads</div>", unsafe_allow_html=True)
@@ -559,15 +580,15 @@ def show_chat_analytics():
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{len(chat_df)}</div><div class="stat-label">Total Messages</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{len(chat_df)}</div><div class="stat-label">Total Messages</div></div>''', unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{len(contacts)}</div><div class="stat-label">Contacts</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{len(contacts)}</div><div class="stat-label">Contacts</div></div>''', unsafe_allow_html=True)
     with col3:
         my_messages = sum(1 for _, row in chat_df.iterrows() if is_me(row.get('sender_name', ''), row.get('sender_linkedin_url', ''), my_profile))
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{my_messages}</div><div class="stat-label">Sent by You</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{my_messages}</div><div class="stat-label">Sent by You</div></div>''', unsafe_allow_html=True)
     with col4:
         received = len(chat_df) - my_messages
-        st.markdown(f"""<div class="stat-box"><div class="stat-number">{received}</div><div class="stat-label">Received</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="stat-box"><div class="stat-number">{received}</div><div class="stat-label">Received</div></div>''', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -586,7 +607,7 @@ def show_chat_analytics():
             initials = get_initials(info['name'])
             
             with col:
-                st.markdown(f"""
+                st.markdown(f'''
                 <div class="contact-card">
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <div class="profile-badge">{initials}</div>
@@ -600,7 +621,7 @@ def show_chat_analytics():
                     <p style="margin-top: 15px;"><strong>Last:</strong> {info['last_contact']}</p>
                     <a href="{url}" target="_blank" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 25px; display: inline-block; margin-top: 10px;">🔗 LinkedIn →</a>
                 </div>
-                """, unsafe_allow_html=True)
+                ''', unsafe_allow_html=True)
     else:
         for idx, (i, row) in enumerate(chat_df.iterrows()):
             sender_name = str(row.get('sender_name', 'Unknown'))
@@ -612,7 +633,7 @@ def show_chat_analytics():
             badge_style = "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" if is_my_message else "background: #10b981;"
             badge_text = "You" if is_my_message else "Received"
             
-            st.markdown(f"""
+            st.markdown(f'''
             <div class="message-card-all">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                     <div>
@@ -623,7 +644,7 @@ def show_chat_analytics():
                 </div>
                 <div style="margin: 15px 0; line-height: 1.6;">{message}</div>
             </div>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
 
 def show_overview():
     st.markdown("<div class='section-header'>📊 Dashboard Overview</div>", unsafe_allow_html=True)
@@ -633,15 +654,15 @@ def show_overview():
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""<div class="metric-card"><div class="metric-value">{len(chat_df)}</div><div class="metric-label">Total Chats</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="metric-card"><div class="metric-value">{len(chat_df)}</div><div class="metric-label">Total Chats</div></div>''', unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""<div class="metric-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"><div class="metric-value">{len(outreach_df)}</div><div class="metric-label">Total Leads</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="metric-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"><div class="metric-value">{len(outreach_df)}</div><div class="metric-label">Total Leads</div></div>''', unsafe_allow_html=True)
     with col3:
         sent = len(outreach_df[outreach_df['success'].astype(str).str.lower() == 'true']) if 'success' in outreach_df.columns and not outreach_df.empty else 0
-        st.markdown(f"""<div class="metric-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"><div class="metric-value">{sent}</div><div class="metric-label">Messages Sent</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="metric-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"><div class="metric-value">{sent}</div><div class="metric-label">Messages Sent</div></div>''', unsafe_allow_html=True)
     with col4:
         pending = len(outreach_df) - sent if not outreach_df.empty else 0
-        st.markdown(f"""<div class="metric-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"><div class="metric-value">{pending}</div><div class="metric-label">Pending</div></div>""", unsafe_allow_html=True)
+        st.markdown(f'''<div class="metric-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"><div class="metric-value">{pending}</div><div class="metric-label">Pending</div></div>''', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -673,12 +694,12 @@ def main():
     
     with st.sidebar:
         st.header("⚙️ Dashboard Settings")
-        st.markdown(f"""
+        st.markdown(f'''
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; color: white;">
             <h3>{st.session_state.current_client['name']}</h3>
             <a href="{st.session_state.current_client['linkedin_url']}" target="_blank" style="color: white;">🔗 LinkedIn →</a>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -706,7 +727,7 @@ def main():
             st.session_state.authenticated = False
             st.rerun()
     
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 Overview", "🎯 Lead Outreach", "📧 Email Outreach",
         "🔍 Search & Send", "📋 CRM Dashboard", "💬 Chat Analytics"
     ])
@@ -726,3 +747,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''
