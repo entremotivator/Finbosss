@@ -736,9 +736,8 @@ def calculate_metrics(chat_df, outreach_df):
     }
     
     if not chat_df.empty:
-        # Ensure the result of apply is a boolean Series before using it for indexing
         is_my_message = chat_df.apply(
-            lambda row: is_me(row.get(\'sender_name\'), row.get(\'sender_url\'), MY_PROFILE), axis=1
+            lambda row: is_me(row.get('sender_name'), row.get('sender_url'), MY_PROFILE), axis=1
         ).astype(bool)
         metrics['messages_sent'] = len(chat_df[is_my_message])
         metrics['messages_received'] = len(chat_df) - metrics['messages_sent']
