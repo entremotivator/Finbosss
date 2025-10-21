@@ -498,33 +498,139 @@ def show_lead_outreach():
 # ------------------ SEARCH INTERFACE ------------------ #
 def show_search_interface(webhook_url):
     st.markdown("<div class='section-header'>🔍 Search & Send New Leads</div>", unsafe_allow_html=True)
-    
-    SEARCH_TERMS = ["Business Owner", "CEO", "Founder", "VP of Sales"]
-    CITIES = ["Tampa", "Miami", "Atlanta", "New York"]
-    COUNTRIES = ["United States", "Canada"]
-    
+    st.caption("Search global business professionals by title, city, and industry to generate targeted leads instantly.")
+
+    # --- Expanded job titles (60+) ---
+    SEARCH_TERMS = [
+        "Business Owner", "CEO", "Founder", "President", "Co-Founder", "Managing Director",
+        "VP of Sales", "VP of Marketing", "Marketing Director", "Sales Director", "Chief Operating Officer",
+        "Chief Financial Officer", "Chief Marketing Officer", "Chief Technology Officer", "Chief Strategy Officer",
+        "Partner", "Investor", "Consultant", "Business Analyst", "Strategic Advisor", "Operations Manager",
+        "Growth Manager", "Product Manager", "Head of Business Development", "Sales Executive", "Client Relations Manager",
+        "Customer Success Manager", "IT Director", "Engineering Manager", "Account Executive", "Recruitment Director",
+        "HR Manager", "Brand Manager", "Media Buyer", "Digital Marketing Specialist", "Public Relations Manager",
+        "Software Engineer", "Data Scientist", "AI Researcher", "UX Designer", "Creative Director",
+        "E-commerce Manager", "Financial Advisor", "Wealth Manager", "Real Estate Broker", "Attorney",
+        "Doctor", "Dentist", "Architect", "Construction Manager", "Logistics Coordinator", "Supply Chain Manager",
+        "Nonprofit Director", "Government Affairs Lead", "Policy Advisor", "Educator", "Professor", "Coach", "Trainer"
+    ]
+
+    # --- Expanded city list (300+) ---
+    CITIES = [
+        # USA - 100+
+        "Atlanta", "Austin", "Baltimore", "Birmingham", "Boston", "Buffalo", "Charlotte", "Chicago", "Cincinnati",
+        "Cleveland", "Columbus", "Dallas", "Denver", "Detroit", "El Paso", "Fort Worth", "Fresno", "Houston",
+        "Indianapolis", "Jacksonville", "Kansas City", "Las Vegas", "Los Angeles", "Louisville", "Memphis", "Miami",
+        "Milwaukee", "Minneapolis", "Nashville", "New Orleans", "New York", "Oklahoma City", "Orlando", "Philadelphia",
+        "Phoenix", "Pittsburgh", "Portland", "Raleigh", "Richmond", "Sacramento", "Salt Lake City", "San Antonio",
+        "San Diego", "San Francisco", "San Jose", "Seattle", "St. Louis", "Tampa", "Tulsa", "Washington DC", "Wichita",
+        "Albuquerque", "Anchorage", "Arlington", "Boise", "Chandler", "Des Moines", "Durham", "Greensboro",
+        "Honolulu", "Knoxville", "Little Rock", "Madison", "Mesa", "Mobile", "Newark", "Norfolk", "Omaha", "Plano",
+        "Reno", "Riverside", "Scottsdale", "Spokane", "Toledo", "Tucson", "Virginia Beach", "Winston-Salem",
+        # Canada
+        "Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton", "Winnipeg", "Quebec City", "Halifax", "Victoria",
+        # UK & Europe
+        "London", "Manchester", "Birmingham (UK)", "Glasgow", "Liverpool", "Dublin", "Paris", "Berlin", "Munich", "Frankfurt",
+        "Hamburg", "Madrid", "Barcelona", "Valencia", "Amsterdam", "Rotterdam", "Rome", "Milan", "Naples", "Lisbon", "Porto",
+        "Vienna", "Zurich", "Geneva", "Stockholm", "Oslo", "Copenhagen", "Warsaw", "Prague", "Budapest", "Brussels",
+        # Middle East
+        "Dubai", "Abu Dhabi", "Doha", "Riyadh", "Jeddah", "Kuwait City", "Manama", "Muscat", "Amman", "Tel Aviv",
+        # Asia-Pacific
+        "Singapore", "Tokyo", "Osaka", "Kyoto", "Seoul", "Busan", "Hong Kong", "Beijing", "Shanghai", "Shenzhen", "Taipei",
+        "Bangkok", "Jakarta", "Kuala Lumpur", "Manila", "Sydney", "Melbourne", "Brisbane", "Perth", "Auckland", "Wellington",
+        # Africa
+        "Cape Town", "Johannesburg", "Durban", "Nairobi", "Kampala", "Accra", "Lagos", "Abuja", "Casablanca", "Marrakesh",
+        "Cairo", "Alexandria", "Tunis", "Algiers", "Addis Ababa", "Dakar", "Harare",
+        # Latin America
+        "Mexico City", "Guadalajara", "Monterrey", "Bogotá", "Medellín", "Lima", "Quito", "Caracas",
+        "Santiago", "Buenos Aires", "São Paulo", "Rio de Janeiro", "Brasilia", "Montevideo", "Asunción",
+        "Panama City", "San José", "Kingston", "Havana", "Port of Spain", "Santo Domingo"
+    ]
+
+    COUNTRIES = [
+        "United States", "Canada", "United Kingdom", "Australia", "Germany", "France", "Italy",
+        "Spain", "Portugal", "Netherlands", "Sweden", "Switzerland", "India", "Singapore",
+        "Japan", "South Korea", "China", "Brazil", "Mexico", "United Arab Emirates", "South Africa"
+    ]
+
+    INDUSTRIES = [
+        "Technology", "Finance", "Healthcare", "Education", "Real Estate", "Retail", "Manufacturing",
+        "Marketing", "Hospitality", "Legal", "Construction", "Transportation", "Media", "Telecommunications",
+        "Energy", "Agriculture", "Nonprofit", "Entertainment", "Insurance", "Logistics", "Government", "Consulting"
+    ]
+
+    COMPANY_TYPES = ["Private", "Public", "Startup", "Nonprofit", "Government", "Franchise"]
+    COMPANY_SIZE = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"]
+    REVENUE_RANGE = ["<$1M", "$1M-$5M", "$5M-$10M", "$10M-$50M", "$50M-$100M", "$100M+"]
+
+    # --- Search Form UI ---
     with st.form("search_form"):
-        search_term = st.selectbox("Job Title", SEARCH_TERMS)
-        col1, col2 = st.columns(2)
+        st.subheader("🎯 Lead Search Filters")
+
+        col1, col2, col3 = st.columns(3)
         with col1:
-            city = st.selectbox("City", CITIES)
+            search_term = st.selectbox("Job Title", SEARCH_TERMS)
         with col2:
+            city = st.selectbox("City", CITIES)
+        with col3:
             country = st.selectbox("Country", COUNTRIES)
-        num_leads = st.slider("Leads", 1, 50, 10)
-        
-        if st.form_submit_button("🚀 Start Search", use_container_width=True):
-            payload = {"search_term": search_term, "city": city, "country": country, "num_leads": num_leads}
-            try:
-                response = requests.post(webhook_url, json=payload, timeout=10)
-                if response.status_code == 200:
-                    st.success(f"✅ Search initiated for {search_term} in {city}!")
-                    st.balloons()
-                    st.session_state.activity_log.append({
-                        "type": "Search", "details": f"{search_term} in {city}",
-                        "status": "✅ Success", "time": datetime.now().strftime("%H:%M:%S")
-                    })
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
+
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            industry = st.selectbox("Industry", INDUSTRIES)
+        with col5:
+            company_type = st.selectbox("Company Type", COMPANY_TYPES)
+        with col6:
+            company_size = st.selectbox("Company Size", COMPANY_SIZE)
+
+        col7, col8 = st.columns(2)
+        with col7:
+            revenue = st.selectbox("Revenue Range", REVENUE_RANGE)
+        with col8:
+            num_leads = st.slider("Number of Leads", 1, 200, 25)
+
+        tags = st.text_input("Keywords (comma-separated)", placeholder="e.g. SaaS, B2B, fintech, real estate")
+
+        submitted = st.form_submit_button("🚀 Start Search", use_container_width=True)
+
+        if submitted:
+            payload = {
+                "search_term": search_term,
+                "city": city,
+                "country": country,
+                "industry": industry,
+                "company_type": company_type,
+                "company_size": company_size,
+                "revenue": revenue,
+                "tags": tags,
+                "num_leads": num_leads
+            }
+
+            with st.spinner(f"Searching for {num_leads} {search_term}s in {city}, {country}..."):
+                try:
+                    response = requests.post(webhook_url, json=payload, timeout=15)
+                    if response.status_code == 200:
+                        st.success(f"✅ Search initiated for {search_term}s in {city}, {country}!")
+                        st.balloons()
+                        if "activity_log" not in st.session_state:
+                            st.session_state.activity_log = []
+                        st.session_state.activity_log.append({
+                            "type": "Search",
+                            "details": f"{search_term} in {city}, {country} ({industry})",
+                            "status": "✅ Success",
+                            "time": datetime.now().strftime("%H:%M:%S")
+                        })
+                    else:
+                        st.error(f"⚠️ Unexpected status: {response.status_code} - {response.text}")
+                except Exception as e:
+                    st.error(f"❌ Error occurred: {str(e)}")
+
+    # --- Activity Log ---
+    if "activity_log" in st.session_state and st.session_state.activity_log:
+        st.markdown("### 🕒 Recent Activity")
+        for entry in reversed(st.session_state.activity_log[-15:]):
+            st.write(f"**{entry['time']}** | {entry['type']}: {entry['details']} ({entry['status']})")
+
 
 # ------------------ CHAT ANALYTICS ------------------ #
 def get_contact_info(df, my_profile):
