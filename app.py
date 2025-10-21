@@ -1856,4 +1856,3 @@ def main():
 # ------------------ RUN APPLICATION ------------------ #
 if __name__ == "__main__":
     main()
-
