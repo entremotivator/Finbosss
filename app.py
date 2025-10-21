@@ -26,7 +26,7 @@ CHAT_SPREADSHEET_ID = "1klm60YFXSoV510S4igv5LfREXeykDhNA5Ygq7HNFN0I"
 CHAT_SHEET_NAME = "linkedin_chat_history_advanced 2"
 
 OUTREACH_SPREADSHEET_ID = "1eLEFvyV1_f74UC1g5uQ-xA7A62sK8Pog27KIjw_Sk3Y"
-OUTREACH_SHEET_NAME = "Sheet1"
+OUTREACH_SHEET_NAME = "linkedin-tracking-csv"
 
 # My profile information
 MY_PROFILE = {
