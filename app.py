@@ -183,7 +183,6 @@ def parse_timestamp(timestamp_str):
             return None
 
 def is_message_sent(row):
-    # If it's an email, always consider it unsent as per requirement
     if row.get("email_subject") or row.get("email_message"):
         return False
     success = str(row.get('success', '')).lower()
@@ -237,7 +236,6 @@ def show_crm_dashboard():
         outreach_df['date'] = outreach_df['parsed_time'].dt.date
         outreach_df['time'] = outreach_df['parsed_time'].dt.time
     
-    # Filters
     st.markdown("### 🔍 Filter Leads")
     col1, col2, col3, col4 = st.columns(4)
     
@@ -258,7 +256,6 @@ def show_crm_dashboard():
         else:
             city_filter = "All"
     
-    # Apply filters
     filtered_df = outreach_df.copy()
     if search:
         mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search, case=False, na=False)).any(axis=1)
@@ -273,7 +270,6 @@ def show_crm_dashboard():
     st.markdown(f"**Showing {len(filtered_df)} of {len(outreach_df)} leads**")
     st.markdown("---")
     
-    # Display CRM cards with ALL 25 columns
     for idx, (i, row) in enumerate(filtered_df.iterrows()):
         with st.container():
             st.markdown(f'''
@@ -291,7 +287,6 @@ def show_crm_dashboard():
                 <div class="crm-field"><strong>🔍 Search Term:</strong> {row.get('search_term', 'N/A')}</div>
                 <div class="crm-field"><strong>🌆 Search City:</strong> {row.get('search_city', 'N/A')}</div>
                 <div class="crm-field"><strong>🌍 Search Country:</strong> {row.get('search_country', 'N/A')}</div>
-                <div class="crm-field"><strong>🖼️ Image URL:</strong> {row.get('image_url', 'N/A')[:50] if row.get('image_url') else 'N/A'}</div>
                 <div class="crm-field"><strong>📧 Email:</strong> {row.get('email', 'N/A')}</div>
                 <div class="crm-field"><strong>📞 Phone:</strong> {row.get('phone_number', 'N/A')}</div>
                 ''', unsafe_allow_html=True)
@@ -303,7 +298,6 @@ def show_crm_dashboard():
                 <div class="crm-field"><strong>✅ Success:</strong> <span class="status-badge {success_badge}">{row.get('success', 'N/A')}</span></div>
                 <div class="crm-field"><strong>📊 Status:</strong> {row.get('status', 'N/A')}</div>
                 <div class="crm-field"><strong>🔗 Connection:</strong> {row.get('connection_status', 'N/A')}</div>
-                <div class="crm-field"><strong>🌐 Session:</strong> {row.get('browserflow_session', 'N/A')[:30]}</div>
                 <div class="crm-field"><strong>📅 Last Activity:</strong> {row.get('last_activity', 'N/A')}</div>
                 <div class="crm-field"><strong>📝 Notes:</strong> {row.get('notes', 'N/A')[:100]}{'...' if len(str(row.get('notes', ''))) > 100 else ''}</div>
                 <div class="crm-field"><strong>💳 Credits Used:</strong> {row.get('credits_used', 'N/A')}</div>
@@ -388,7 +382,6 @@ def show_email_outreach():
     
     st.markdown("---")
     
-    # Filters
     col1, col2, col3 = st.columns(3)
     with col1:
         search = st.text_input("🔍 Search", placeholder="Search emails...", key="email_search")
@@ -461,7 +454,7 @@ def show_email_outreach():
                 st.markdown("---")
                 st.markdown(email_message)
 
-# ------------------ Continue with remaining functions... ------------------ #
+# ------------------ LEAD OUTREACH ------------------ #
 def show_lead_outreach():
     st.markdown("<div class='section-header'>🎯 Lead Outreach Management</div>", unsafe_allow_html=True)
     
@@ -502,6 +495,7 @@ def show_lead_outreach():
             </div>
             ''', unsafe_allow_html=True)
 
+# ------------------ SEARCH INTERFACE ------------------ #
 def show_search_interface(webhook_url):
     st.markdown("<div class='section-header'>🔍 Search & Send New Leads</div>", unsafe_allow_html=True)
     
@@ -532,6 +526,7 @@ def show_search_interface(webhook_url):
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
 
+# ------------------ CHAT ANALYTICS ------------------ #
 def get_contact_info(df, my_profile):
     contacts = {}
     for idx, row in df.iterrows():
@@ -645,6 +640,7 @@ def show_chat_analytics():
             </div>
             ''', unsafe_allow_html=True)
 
+# ------------------ OVERVIEW ------------------ #
 def show_overview():
     st.markdown("<div class='section-header'>📊 Dashboard Overview</div>", unsafe_allow_html=True)
     
@@ -680,6 +676,7 @@ def show_overview():
             fig = px.bar(x=city_counts.values, y=city_counts.index, orientation='h')
             st.plotly_chart(fig, use_container_width=True)
 
+# ------------------ MAIN APP ------------------ #
 def main():
     if not st.session_state.authenticated:
         authenticate_user()
@@ -726,7 +723,7 @@ def main():
             st.session_state.authenticated = False
             st.rerun()
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Overview", "🎯 Lead Outreach", "📧 Email Outreach",
         "🔍 Search & Send", "📋 CRM Dashboard", "💬 Chat Analytics"
     ])
