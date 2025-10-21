@@ -866,7 +866,7 @@ def show_lead_outreach():
     
     if outreach_df.empty:
         st.warning("📭 No outreach data loaded. Please load your outreach sheet from the sidebar.")
-        st.info("💡 **How to get started:**\n1. Configure your outreach sheet ID in the sidebar\n2. Click 'Load/Refresh Data'\n3. Your leads will appear here")
+        st.info("💡 **How to get started:**\n1. Click 'Load/Refresh Data' in the sidebar\n2. Your leads will appear here")
         return
     
     # Statistics
@@ -914,25 +914,23 @@ def show_lead_outreach():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        search_query = st.text_input("🔍 Search", placeholder="Search leads...")
+        search_query = st.text_input("🔍 Search", placeholder="Search leads...", key="lead_search")
     
     with col2:
-        status_filter = st.selectbox(
-            "📊 Status",
-            ["All"] + list(outreach_df['status'].unique()) if 'status' in outreach_df.columns else ["All"]
-        )
+        status_options = ["All"]
+        if 'status' in outreach_df.columns:
+            status_options.extend(sorted(outreach_df['status'].dropna().unique().tolist()))
+        status_filter = st.selectbox("📊 Status", status_options)
     
     with col3:
-        city_filter = st.selectbox(
-            "🌆 City",
-            ["All"] + list(outreach_df['search_city'].unique()) if 'search_city' in outreach_df.columns else ["All"]
-        )
+        city_options = ["All"]
+        if 'search_city' in outreach_df.columns:
+            city_options.extend(sorted(outreach_df['search_city'].dropna().unique().tolist()))
+        city_filter = st.selectbox("🌆 City", city_options)
     
     with col4:
-        sort_by = st.selectbox(
-            "🔄 Sort By",
-            ["timestamp", "profile_name", "status", "search_city"]
-        )
+        sort_columns = [col for col in ["timestamp", "profile_name", "status", "search_city"] if col in outreach_df.columns]
+        sort_by = st.selectbox("🔄 Sort By", sort_columns if sort_columns else ["Default"])
     
     # Apply filters
     filtered_df = outreach_df.copy()
@@ -949,7 +947,7 @@ def show_lead_outreach():
     if city_filter != "All" and 'search_city' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['search_city'] == city_filter]
     
-    if sort_by in filtered_df.columns:
+    if sort_by != "Default" and sort_by in filtered_df.columns:
         filtered_df = filtered_df.sort_values(by=sort_by, ascending=False)
     
     st.markdown(f"**Showing {len(filtered_df)} leads**")
@@ -957,17 +955,24 @@ def show_lead_outreach():
     # View mode selection
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
-        view_mode = st.radio("View Mode", ["Cards", "Table", "Compact"], horizontal=True)
+        view_mode = st.radio("View Mode", ["Cards", "Table", "Compact"], horizontal=True, key="lead_view_mode")
     with col2:
-        leads_per_page = st.selectbox("Per Page", [10, 25, 50, 100], index=1)
+        leads_per_page = st.selectbox("Per Page", [10, 25, 50, 100], index=1, key="lead_per_page")
     with col3:
-        page_num = st.number_input("Page", min_value=1, max_value=max(1, (len(filtered_df)-1)//leads_per_page + 1), value=1)
+        total_pages = max(1, (len(filtered_df) - 1) // leads_per_page + 1) if len(filtered_df) > 0 else 1
+        page_num = st.number_input("Page", min_value=1, max_value=total_pages, value=1, key="lead_page_num")
     
     st.markdown("---")
     
+    # Check if we have data to display
+    if filtered_df.empty:
+        st.warning("🔍 No leads match your current filters.")
+        st.info("💡 Try adjusting your search criteria or filters.")
+        return
+    
     # Pagination
     start_idx = (page_num - 1) * leads_per_page
-    end_idx = start_idx + leads_per_page
+    end_idx = min(start_idx + leads_per_page, len(filtered_df))
     paginated_df = filtered_df.iloc[start_idx:end_idx]
     
     # Display based on view mode
@@ -986,21 +991,22 @@ def show_lead_outreach():
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            bulk_count = st.number_input("Number of leads", min_value=1, max_value=len(filtered_df), value=min(5, len(filtered_df)))
+            bulk_count = st.number_input("Number of leads", min_value=1, max_value=len(filtered_df), value=min(5, len(filtered_df)), key="bulk_count")
         
         with col2:
-            if st.button("📤 Send Bulk", use_container_width=True):
+            if st.button("📤 Send Bulk", use_container_width=True, key="bulk_send"):
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
                 for idx, (i, row) in enumerate(filtered_df.head(bulk_count).iterrows()):
-                    status_text.text(f"Sending to {row.get('profile_name', 'Lead')}...")
+                    lead_name = row.get('profile_name', row.get('name', 'Lead'))
+                    status_text.text(f"Sending to {lead_name}...")
                     st.session_state.sent_leads.add(i)
                     
                     # Log activity
                     st.session_state.activity_log.append({
                         "type": "Bulk Send",
-                        "details": f"Message to {row.get('profile_name', 'Lead')}",
+                        "details": f"Message to {lead_name}",
                         "status": "✅ Success",
                         "time": datetime.now().strftime("%H:%M:%S")
                     })
@@ -1014,22 +1020,27 @@ def show_lead_outreach():
                 st.rerun()
         
         with col3:
-            if st.button("📊 Export CSV", use_container_width=True):
+            if st.button("📊 Export CSV", use_container_width=True, key="export_csv"):
                 csv = filtered_df.to_csv(index=False)
                 st.download_button(
                     label="📥 Download",
                     data=csv,
                     file_name=f"leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="text/csv"
+                    mime="text/csv",
+                    key="download_csv"
                 )
         
         with col4:
-            if st.button("🔄 Refresh", use_container_width=True):
+            if st.button("🔄 Refresh", use_container_width=True, key="refresh_leads"):
                 st.cache_data.clear()
                 st.rerun()
 
 def display_leads_cards(df):
     """Display leads in card format"""
+    if df.empty:
+        st.info("No leads to display")
+        return
+    
     for idx, (i, row) in enumerate(df.iterrows()):
         col1, col2 = st.columns([3, 1])
         
@@ -1038,7 +1049,7 @@ def display_leads_cards(df):
             location = str(row.get('profile_location', row.get('location', 'Unknown')))
             tagline = str(row.get('profile_tagline', row.get('tagline', 'No tagline')))
             linkedin_url = str(row.get('linkedin_url', '#'))
-            message = str(row.get('linkedin_message', 'No message'))
+            message = str(row.get('linkedin_message', row.get('message', 'No message')))
             status = str(row.get('status', 'unknown'))
             
             try:
@@ -1081,7 +1092,7 @@ def display_leads_cards(df):
         with col2:
             st.markdown("**Actions**")
             
-            if st.button("🚀 Send", key=f"send_{i}", disabled=is_sent, use_container_width=True):
+            if st.button("🚀 Send", key=f"send_{i}_{idx}", disabled=is_sent, use_container_width=True):
                 st.session_state.sent_leads.add(i)
                 st.session_state.activity_log.append({
                     "type": "Message Sent",
@@ -1093,14 +1104,14 @@ def display_leads_cards(df):
                 time.sleep(1)
                 st.rerun()
             
-            if st.button("📋 Copy", key=f"copy_{i}", use_container_width=True):
+            if st.button("📋 Copy", key=f"copy_{i}_{idx}", use_container_width=True):
                 st.info("📋 Lead data copied!")
             
-            if st.button("⭐ Save", key=f"save_{i}", use_container_width=True):
+            if st.button("⭐ Save", key=f"save_{i}_{idx}", use_container_width=True):
                 st.info("⭐ Lead saved!")
             
             is_selected = i in st.session_state.selected_leads
-            if st.checkbox("Select", key=f"select_{i}", value=is_selected):
+            if st.checkbox("Select", key=f"select_{i}_{idx}", value=is_selected):
                 if i not in st.session_state.selected_leads:
                     st.session_state.selected_leads.append(i)
             else:
@@ -1109,13 +1120,16 @@ def display_leads_cards(df):
 
 def display_leads_table(df):
     """Display leads in table format"""
+    if df.empty:
+        st.info("No leads to display")
+        return
+    
     display_columns = []
-    if not df.empty:
-        important_columns = ['profile_name', 'profile_location', 'status', 'timestamp', 'search_term', 'search_city']
-        display_columns = [col for col in important_columns if col in df.columns]
-        
-        remaining_columns = [col for col in df.columns if col not in display_columns]
-        display_columns.extend(remaining_columns[:5])
+    important_columns = ['profile_name', 'profile_location', 'status', 'timestamp', 'search_term', 'search_city']
+    display_columns = [col for col in important_columns if col in df.columns]
+    
+    remaining_columns = [col for col in df.columns if col not in display_columns]
+    display_columns.extend(remaining_columns[:5])
     
     if display_columns:
         st.dataframe(df[display_columns], use_container_width=True, height=600)
@@ -1124,6 +1138,10 @@ def display_leads_table(df):
 
 def display_leads_compact(df):
     """Display leads in compact format"""
+    if df.empty:
+        st.info("No leads to display")
+        return
+    
     for idx, (i, row) in enumerate(df.iterrows()):
         name = str(row.get('profile_name', row.get('name', 'Unnamed Lead')))
         location = str(row.get('profile_location', row.get('location', 'Unknown')))
@@ -1139,7 +1157,7 @@ def display_leads_compact(df):
             st.write(f"📊 {status}")
         with col4:
             is_sent = status == 'sent' or i in st.session_state.sent_leads
-            if st.button("🚀", key=f"send_compact_{i}", help="Send message", disabled=is_sent):
+            if st.button("🚀", key=f"send_compact_{i}_{idx}", help="Send message", disabled=is_sent):
                 st.session_state.sent_leads.add(i)
                 st.success("Sent!")
                 st.rerun()
