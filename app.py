@@ -35,7 +35,7 @@ MY_PROFILE = {
 }
 
 # Webhook URL
-WEBHOOK_URL = "https://agentonline-u29564.vm.elestio.app/webhook-test/Leadlinked"
+WEBHOOK_URL = "https://agentonline-u29564.vm.elestio.app/webhook/Leadlinked"
 
 # ------------------ SESSION STATE INITIALIZATION ------------------ #
 if 'authenticated' not in st.session_state:
